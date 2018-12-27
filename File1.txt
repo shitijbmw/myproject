@@ -1,0 +1,53 @@
+import pyspark
+from pyspark.sql import SparkSession
+from pyspark.sql.types import *
+from pyspark.sql import Row
+from pyspark.sql.types import StructType, StructField
+from pyspark.sql.types import DoubleType, IntegerType, StringType
+
+import AuditProcess.py
+
+# Append data in audit table/csv - Start date and time with process name
+maxid= init_audit (0,"add","Test","Test","Test",0,"null","Start")
+
+#spark = SparkSession.builder.appName('Basics').getOrCreate()
+#schema = StructType([
+#    StructField("CustomerNbr", IntegerType()),
+#    StructField("FirstName", StringType()),
+#    StructField("LastName", StringType()),
+#    StructField("AddressLine1", StringType()),
+#    StructField("Addressline2", StringType()),
+#    StructField("City", StringType()),
+#    StructField("State", StringType()),
+#    StructField("ZipCode", StringType()),
+#    StructField("PurchaseAmtToDate", IntegerType()),
+#    StructField("EmailAddress", StringType())
+#])
+#peopleDF = spark.read.csv('D:/Project/Big Data COE/Docs/SampleCustomer.csv', header=True, schema=schema)
+# To check the first six rows
+
+# Read CSV File and create the DF 
+spark = SparkSession \
+    .builder \
+    .appName("regression") \
+    .config("spark.some.config.option", "local[*]") \
+    .getOrCreate()
+
+peopleDF = spark.read.csv('D:/Project/Big Data COE/Docs/SampleCustomer.csv')
+peopleDF.show(6)
+peopleDF.createGlobalTempView("samplecustomer")
+sqlDF = spark.sql("SELECT CustomerNbr FROM samplecustomer")
+sqlDF.show()
+
+for column in sqlDF:
+    print(sqlDF[column])
+
+
+   
+
+# Export CSV file
+peopleDF.write.option("header", "true").csv("D:/Project/Big Data COE/Docs/test_out.csv")
+
+maxid2= init_audit (maxid,"update","Test","Test","Test",0,"null","Completed")
+
+

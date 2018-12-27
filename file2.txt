@@ -1,0 +1,48 @@
+import pyspark
+from pyspark.sql import SparkSession
+from pyspark.sql.types import *
+from pyspark.sql import Row
+import time
+
+#Creating Audit file
+schema = StructType([
+    StructField("ID", IntegerType()),
+    StructField("Processname", StringType()),
+    StructField("PROCESS_TO", StringType()),
+    StructField("PunchINDate", StringType()),
+    StructField("PunchOutDate", StringType()),
+    StructField("Recordscount", StringType()),
+    StructField("Error", StringType()),
+    StructField("Status", StringType())
+])
+        
+
+def int init_audit(pid, flag, process_name,  process_to, rcount, emessage, status):
+  # if Flag is add then process will append new data in csv file , if update process will update the existing ID data with end time
+    if flag="add":   
+        start = time.time()
+        DF = spark.read.text('D:/Project/Big Data COE/Docs/1/audit_out.txt', header=True, schema=schema)
+        DF.show()
+    	#get max id	
+    	DF.registerTempTable("df_table")
+    	MaxID= spark.sql("SELECT MAX(A) as maxval FROM df_table").collect()[0].asDict()['maxval']
+    	# Apped data in Audit schema table
+        DF.withColumn("Id", MaxID+1)
+    	DF.withColumn("Processname", process_name)
+    	DF.withColumn("PROCESS_TO", process_to)
+    	DF.withColumn("PunchINDate", start)
+    	DF.withColumn("Recordscount", rcount)
+    	DF.withColumn("Error", emessage)
+    	DF.withColumn("Status", status)
+    	DF.write.mode("overwrite").save("D:/Project/Big Data COE/Docs/1/audit_out.txt")
+    else:
+        # Endime
+        enddate = time.time()
+        # update the data in schema
+    	DF = spark.read.csv('D:/Project/Big Data COE/Docs/1/audit_out.csv', header=True, schema=schema)
+    	DF.loc[DF['id'] == pid, ['PunchOutDate'] = enddate
+    	DF.loc[DF['id'] == pid, ['Status'] = "Completed"
+	DF.write.mode("overwrite").save("D:/Project/Big Data COE/Docs/1/audit_out.txt")
+    
+    return maxid		
+        
